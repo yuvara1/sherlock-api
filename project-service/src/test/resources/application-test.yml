@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:projects;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS project_service\;SET SCHEMA project_service
+    username: sa
+    password: ""
+sherlock:
+  internal-token: test-internal-token-32-characters-minimum

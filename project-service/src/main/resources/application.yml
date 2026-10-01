@@ -1,0 +1,53 @@
+server:
+  port: ${PORT:8082}
+  shutdown: graceful
+  forward-headers-strategy: none
+  error:
+    include-message: never
+    include-stacktrace: never
+spring:
+  application:
+    name: sherlock-project-service
+  datasource:
+    url: ${PROJECT_DATABASE_URL:jdbc:postgresql://localhost:5432/sherlock?currentSchema=project_service}
+    username: ${DATABASE_USERNAME:sherlock}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DATABASE_POOL_SIZE:10}
+  flyway:
+    schemas: project_service
+    default-schema: project_service
+    create-schemas: true
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
+sherlock:
+  issuer: ${AUTH_ISSUER:sherlock-auth}
+  jwks-uri: ${AUTH_JWKS_URI:http://localhost:8081/api/v1/auth/.well-known/jwks.json}
+  auth-url: ${AUTH_SERVICE_URL:http://localhost:8081}
+  internal-token: ${SERVICE_INTERNAL_TOKEN}
+  mail-enabled: ${MAIL_ENABLED:false}
+  mail-from: ${MAIL_FROM:no-reply@sherlock.in}
+  invite-url: ${TEAM_INVITE_URL:https://sherlock-in.vercel.app/invite}
+management:
+  health:
+    mail:
+      enabled: ${MAIL_ENABLED:false}
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true

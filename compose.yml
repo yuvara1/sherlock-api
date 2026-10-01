@@ -1,4 +1,13 @@
 services:
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --save "" --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   postgres:
     image: postgres:17-alpine
     environment:
@@ -14,17 +23,22 @@ services:
       retries: 10
 
   auth-service:
-    build: .
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
     ports:
       - "8081:8081"
     environment:
       DATABASE_URL: jdbc:postgresql://postgres:5432/sherlock
       DATABASE_USERNAME: sherlock
       DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
-      JWT_SECRET_BASE64: ${JWT_SECRET_BASE64:?Set JWT_SECRET_BASE64}
+      JWT_PRIVATE_KEY_BASE64: ${JWT_PRIVATE_KEY_BASE64:?Set JWT_PRIVATE_KEY_BASE64}
+      JWT_PUBLIC_KEY_BASE64: ${JWT_PUBLIC_KEY_BASE64:?Set JWT_PUBLIC_KEY_BASE64}
+      JWT_KEY_ID: ${JWT_KEY_ID:-sherlock-auth-rs256-1}
       MFA_ENCRYPTION_KEY_BASE64: ${MFA_ENCRYPTION_KEY_BASE64:?Set MFA_ENCRYPTION_KEY_BASE64}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:8443,https://sherlock-in.vercel.app}
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
+      SERVICE_INTERNAL_TOKEN: ${SERVICE_INTERNAL_TOKEN:?Set SERVICE_INTERNAL_TOKEN (at least 32 characters)}
       PASSWORD_RESET_URL: ${PASSWORD_RESET_URL:-http://localhost:5173/reset-password}
       MAIL_ENABLED: ${MAIL_ENABLED:-false}
       SMTP_HOST: ${SMTP_HOST:-localhost}
@@ -34,6 +48,73 @@ services:
       MAIL_FROM: ${MAIL_FROM:-no-reply@sherlock.in}
     depends_on:
       postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+  project-service:
+    build:
+      context: .
+      dockerfile: project-service/Dockerfile
+    environment:
+      PROJECT_DATABASE_URL: jdbc:postgresql://postgres:5432/sherlock?currentSchema=project_service
+      DATABASE_USERNAME: sherlock
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
+      AUTH_SERVICE_URL: http://auth-service:8081
+      AUTH_JWKS_URI: http://auth-service:8081/api/v1/auth/.well-known/jwks.json
+      AUTH_ISSUER: ${AUTH_ISSUER:-sherlock-auth}
+      SERVICE_INTERNAL_TOKEN: ${SERVICE_INTERNAL_TOKEN:?Set SERVICE_INTERNAL_TOKEN}
+      MAIL_ENABLED: ${MAIL_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@sherlock.in}
+      TEAM_INVITE_URL: ${TEAM_INVITE_URL:-https://sherlock-in.vercel.app/invite}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8081
+      PROJECT_SERVICE_URL: http://project-service:8082
+      SERVICE_INTERNAL_TOKEN: ${SERVICE_INTERNAL_TOKEN:?Set SERVICE_INTERNAL_TOKEN}
+      AUTH_JWKS_URI: http://auth-service:8081/api/v1/auth/.well-known/jwks.json
+      AUTH_ISSUER: ${AUTH_ISSUER:-sherlock-auth}
+      REDIS_HOST: redis
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:8443,https://sherlock-in.vercel.app}
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      project-service:
         condition: service_healthy
     read_only: true
     tmpfs:
