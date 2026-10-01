@@ -1,0 +1,112 @@
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+  forward-headers-strategy: none
+
+spring:
+  application:
+    name: api-gateway
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2s
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        - name: RequestRateLimiter
+          args:
+            key-resolver: "#{@organizationKeyResolver}"
+            redis-rate-limiter.replenishRate: 1000
+            redis-rate-limiter.burstCapacity: 60000
+            redis-rate-limiter.requestedTokens: 60
+      globalcors:
+        cors-configurations:
+          "[/**]":
+            allowedOrigins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8443,https://sherlock-in.vercel.app}
+            allowedMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+            allowedHeaders: [Authorization, Content-Type, X-Correlation-ID, X-API-Key]
+            exposedHeaders: [X-Correlation-ID, X-RateLimit-Remaining, X-RateLimit-Replenish-Rate, X-RateLimit-Burst-Capacity]
+            allowCredentials: false
+            maxAge: 3600
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/auth/**,/api/v1/users/**
+        - id: project-service
+          uri: ${PROJECT_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/projects/**,/api/v1/organizations/**,/api/v1/org/**,/api/v1/team/**,/api/v1/api-keys/**
+        - id: ingest-service
+          uri: ${INGEST_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/ingest/**
+        - id: log-service
+          uri: ${LOG_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/logs/**,/api/v1/saved-views/**
+        - id: trace-service
+          uri: ${TRACE_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/traces/**
+        - id: error-service
+          uri: ${ERROR_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/v1/errors/**
+        - id: incident-service
+          uri: ${INCIDENT_SERVICE_URL:http://localhost:8087}
+          predicates:
+            - Path=/api/v1/incidents/**
+        - id: metric-service
+          uri: ${METRIC_SERVICE_URL:http://localhost:8088}
+          predicates:
+            - Path=/api/v1/metrics/**,/api/v1/dashboard/**
+        - id: service-registry
+          uri: ${SERVICE_REGISTRY_URL:http://localhost:8089}
+          predicates:
+            - Path=/api/v1/services/**
+        - id: alert-service
+          uri: ${ALERT_SERVICE_URL:http://localhost:8090}
+          predicates:
+            - Path=/api/v1/alerts/**
+        - id: ai-service
+          uri: ${AI_SERVICE_URL:http://localhost:8091}
+          predicates:
+            - Path=/api/v1/ai/**
+        - id: integration-service
+          uri: ${INTEGRATION_SERVICE_URL:http://localhost:8092}
+          predicates:
+            - Path=/api/v1/integrations/**
+        - id: deployment-service
+          uri: ${DEPLOYMENT_SERVICE_URL:http://localhost:8093}
+          predicates:
+            - Path=/api/v1/deployments/**
+        - id: dependency-service
+          uri: ${DEPENDENCY_SERVICE_URL:http://localhost:8094}
+          predicates:
+            - Path=/api/v1/dependencies/**
+        - id: notification-service
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8095}
+          predicates:
+            - Path=/api/v1/notifications/**,/api/v1/public/**
+
+sherlock:
+  gateway:
+    issuer: ${AUTH_ISSUER:sherlock-auth}
+    jwk-set-uri: ${AUTH_JWKS_URI:http://localhost:8081/api/v1/auth/.well-known/jwks.json}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true

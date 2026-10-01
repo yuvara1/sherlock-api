@@ -1,0 +1,9 @@
+target/
+**/target/
+.env*
+*.pem
+*.key
+*.p12
+*.log
+.idea/
+*.iml

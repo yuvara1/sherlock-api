@@ -1,0 +1,30 @@
+# Local development profile: zero external dependencies.
+#   mvn spring-boot:run -Dspring-boot.run.profiles=dev
+# In-memory H2 (PostgreSQL mode) + Flyway, fixed NON-SECRET keys, mail disabled
+# (reset links are logged), demo accounts seeded. Never use in production.
+spring:
+  datasource:
+    url: jdbc:h2:mem:sherlock-dev;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+    hikari:
+      minimum-idle: 1
+  flyway:
+    enabled: true
+
+sherlock:
+  seed:
+    enabled: true
+  mail:
+    enabled: false
+    log-reset-links: true
+  auth:
+    issuer: sherlock-dev
+    # Base64 PKCS#8/X.509 RSA key pair. Dev-only values committed on purpose.
+    jwt-private-key-base64: MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDmdToQjii/EJcTfJQIi+tR8gIXqNbvPDVlk7/8jA2oz1auUgzWutW/bf2CM62Ea41Ozvmx/QDZYNuuBOUgO4ME5L3SG0gqIJbFkOa+s/ADTIW6GrmhwOMy6ktrbfTDOmQZEWZNw7h4AbohWA1SEhr+FrmvBlDbpSxw9Fvg3PAdWkB2z7/qGUGGFxo7zEq7njzS0NcrIWc2a198HIS9efrHkmYsqTbniuKwe/uPfnnsaHi67qIj4oGndP5vIKzgABdwk1kKcXoDcwiar3l4/0bWssWC3QMtRve4z47VqvalnBS8Eo9nXhPlnNQ5zJ0fPQxPO24Rj6KNh0RsbYKensIpAgMBAAECggEABnzkXpTx9rcL2cOXE0qFHHB4uJvLOT7zreFj9UMoG0mDAjNTIzRtUg9RpLm5t9GjT8Wp5+XcgUIlzRdcL/Uc8iVSZrjX5j+2nuc+Z73/EsiztxKLiU851jQcXXDiBCD/smj3/VZ2OgKqb8ff0CCsW9zd61x9KEHVJ3TppUHzDJBxNLlZkJk/pgMuw/WfShKIgJiPMQ61gfUR4KrvnnGe5qKv2G+m8Eo5s5J5ht4FCZNt0f+1MbAAf6Vh2TPwinZYk4FSvyzbViQxX2paD6vjgoS315fp3r/danAMz2cuMJFY08rBdmGuzpKadfGWLLUqK3hxz73li2zR/ppGa4HoZQKBgQD2VrXQJoUPBJHB7XlbF6kdfjx4RTFEkHmOhVByMQnZuLUmAn1e4xwfEXd2hobDcYRnmZR70oupdbxx7On+rL8qG+6iqYBk7adQ8o4JQFcTSd0xB6E7xSKoBqTrkXhahj7s5vu439MS8+9hEfvU4MLDI1keU9NEmPvtLlR7XWG5dwKBgQDvfxH80F6+McLX8HkPCoVYnhw9X3/xtu5eznIe2E2IHcSf4zMBykWxwAQ6eh1UBXDYvK7DMWYU4Ngds8cohmHx7h5dOtbs/FSYfdlb9cjsCSAt5j8LcVYZ0VJJbho+6kkey0uq8R05PhLfuTj4Nj6AB5WKr3wVnr57iYrNkEhJXwKBgQDea/CB3yXpJ3EMLwWSMEzsalzjI2aWx/RZsRmv4YNJaLN3fGwCzwFHNBgvlsv7kHXCrTMakkK0YbAjFY05/HQm602O5YkemE6okjmZNNTqf5kOehskwpzGJimm4ZRP+EK82NqUVNRampKbjQdbcQ2p8DK5ZWqu14sw3tI9CVYBhQKBgQCimeRNf+8DNGe0EmkupBb6noZPyNnl8ywNpB5pALRK+OL5JtkHmxwMXXDBfw0QcY03KYuBrLVA8ZLpP5i00+AF0IQ/CebICV0qFy+OtuXOEzgM0aj2DOHHL42tmxooowo35RCfo4oSxiksSeX652ExrXSDLzeQujFbUHuzqwTZAwKBgQCx8/0P6UhgAxaywnL5tZKLYU1WBt5INLdCl6oBAT5RHWZAsbgW82FWC6wKtAjYlBuKfiLZmW593791KwCJQJoG4PD8SwDKIE+O1DrSsrm55ojJnIZE/8l3jY9GcMTUGCVwAbIyALjnGB7QOzaH8pFuOm9bOaQ+gIdnsVHss54EPg==
+    jwt-public-key-base64: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5nU6EI4ovxCXE3yUCIvrUfICF6jW7zw1ZZO//IwNqM9WrlIM1rrVv239gjOthGuNTs75sf0A2WDbrgTlIDuDBOS90htIKiCWxZDmvrPwA0yFuhq5ocDjMupLa230wzpkGRFmTcO4eAG6IVgNUhIa/ha5rwZQ26UscPRb4NzwHVpAds+/6hlBhhcaO8xKu5480tDXKyFnNmtffByEvXn6x5JmLKk254risHv7j3557Gh4uu6iI+KBp3T+byCs4AAXcJNZCnF6A3MImq95eP9G1rLFgt0DLUb3uM+O1ar2pZwUvBKPZ14T5ZzUOcydHz0MTztuEY+ijYdEbG2Cnp7CKQIDAQAB
+    jwt-key-id: sherlock-dev-rs256-1
+    encryption-key-base64: 86LlZnBM6bRRzu19G7yb1V7FrJ6Ah383YXYDtOxj2kw=
+    reset-url: ${PASSWORD_RESET_URL:http://localhost:5173/reset-password}
+    mail-from: dev@sherlock.local
