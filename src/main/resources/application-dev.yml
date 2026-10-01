@@ -1,0 +1,28 @@
+# Local development profile: zero external dependencies.
+#   mvn spring-boot:run -Dspring-boot.run.profiles=dev
+# In-memory H2 (PostgreSQL mode) + Flyway, fixed NON-SECRET keys, mail disabled
+# (reset links are logged), demo accounts seeded. Never use in production.
+spring:
+  datasource:
+    url: jdbc:h2:mem:sherlock-dev;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+    hikari:
+      minimum-idle: 1
+  flyway:
+    enabled: true
+
+sherlock:
+  seed:
+    enabled: true
+  mail:
+    enabled: false
+    log-reset-links: true
+  auth:
+    issuer: sherlock-dev
+    # 64 random bytes / 32 random bytes, Base64. Dev-only values committed on purpose.
+    jwt-secret-base64: FPdzmoddvJrl+GKFqTtDqWsxxmlCMLUIrJku7wCuWzMkpfhZ/EUa0o+8UlZ1/iXJh+Wz1K0oAo+QNJLIDMoeeg==
+    encryption-key-base64: 86LlZnBM6bRRzu19G7yb1V7FrJ6Ah383YXYDtOxj2kw=
+    reset-url: ${PASSWORD_RESET_URL:http://localhost:5173/reset-password}
+    mail-from: dev@sherlock.local
